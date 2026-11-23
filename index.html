@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Dadaev Car — прокат автомобилей в Махачкале. Прототип Telegram Mini App.">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 :root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
 html, body { height: 100%; }
@@ -55,6 +56,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 button { font: inherit; color: inherit; cursor: pointer; }
 button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .app { max-width: 520px; margin: 0 auto; min-height: 100%; padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+.in-tg .app { padding-bottom: 24px; }
+.in-tg body::before { display: none; }
 .gut { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 
 /* top bar */
@@ -394,6 +397,26 @@ try { const raw = localStorage.getItem(STORE_KEY); state = raw ? JSON.parse(raw)
 if (!state || !state.units) state = freshState();
 function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
 
+// ---------- Telegram Mini App ----------
+// Внутри Telegram используем его тему, MainButton, BackButton, контакт и вибрацию; в браузере — свои аналоги.
+const tg = window.Telegram?.WebApp;
+const IN_TG = !!(tg && tg.initData);
+const cssVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const haptic = type => { try { if (IN_TG) tg.HapticFeedback.notificationOccurred(type); } catch (e) {} };
+if (IN_TG) {
+  tg.ready();
+  tg.expand();
+  document.documentElement.classList.add("in-tg");
+  const applyTheme = () => {
+    document.documentElement.dataset.theme = tg.colorScheme === "dark" ? "dark" : "light";
+    try { tg.setHeaderColor(cssVar("--surface")); tg.setBackgroundColor(cssVar("--bg")); } catch (e) {}
+  };
+  applyTheme();
+  tg.onEvent("themeChanged", () => { applyTheme(); render(); });
+  const u = tg.initDataUnsafe?.user;
+  if (u && !state.form.name) state.form.name = [u.first_name, u.last_name].filter(Boolean).join(" ");
+}
+
 // ---------- логика занятости ----------
 const modelById = id => MODELS.find(m => m.id === id);
 const unitById = id => state.units.find(u => u.id === id);
@@ -421,7 +444,18 @@ function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = fals
 
 function go(screen, patch = {}) { Object.assign(state, patch, { screen }); save(); render(); window.scrollTo(0, 0); }
 
+let tgMainHandler = null, tgBackHandler = null;
 function mainButton(text, onClick, disabled = false) {
+  if (IN_TG) {
+    const mb = tg.MainButton;
+    if (tgMainHandler) mb.offClick(tgMainHandler);
+    tgMainHandler = null;
+    $("mainBtnWrap").hidden = true;
+    if (!text) { mb.hide(); return; }
+    mb.setParams({ text, color: disabled ? cssVar("--surface-2") : cssVar("--accent"), text_color: disabled ? cssVar("--muted") : "#17171a", is_active: !disabled, is_visible: true });
+    if (onClick && !disabled) { tgMainHandler = onClick; mb.onClick(tgMainHandler); }
+    return;
+  }
   const wrap = $("mainBtnWrap"), btn = $("mainBtn");
   if (!text) { wrap.hidden = true; btn.onclick = null; return; }
   wrap.hidden = false; btn.textContent = text; btn.disabled = disabled; btn.onclick = onClick;
@@ -431,7 +465,13 @@ function renderTop() {
   const s = state.screen, client = state.role === "client";
   const backTargets = { car: "catalog", book: "car", done: "catalog", terms: state.termsBack || "catalog" };
   const titles = { car: modelById(state.modelId)?.name || "", book: "Заявка", done: "", mine: "Мои брони", terms: "Условия аренды" };
-  const back = client && backTargets[s] ? `<button class="back" id="backBtn" type="button" aria-label="Назад">←</button>` : "";
+  const back = client && backTargets[s] && !IN_TG ? `<button class="back" id="backBtn" type="button" aria-label="Назад">←</button>` : "";
+  if (IN_TG) {
+    const bb = tg.BackButton;
+    if (tgBackHandler) bb.offClick(tgBackHandler);
+    tgBackHandler = null;
+    if (client && backTargets[s]) { tgBackHandler = () => go(backTargets[s]); bb.onClick(tgBackHandler); bb.show(); } else bb.hide();
+  }
   const title = client && titles[s] ? `<div class="top-title">${esc(titles[s])}</div>` : `<div class="logo" role="img" aria-label="Dadaev Car"></div>`;
   $("topRow").innerHTML = back + title + `
     <div class="role" role="group" aria-label="Режим прототипа">
@@ -611,7 +651,17 @@ function renderBook(v) {
   bind("fAge", "age", "checked"); bind("fConsent", "consent", "checked");
   $("fSeat").onchange = e => { f.seat = e.target.checked; save(); renderBook(v); };
   v.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { f.delivery = b.dataset.del; save(); renderBook(v); });
-  $("tgPhone").onclick = () => { f.phone = "+7 928 000-00-00"; save(); $("fPhone").value = f.phone; toast("Демо: Telegram передал номер"); };
+  $("tgPhone").onclick = () => {
+    if (IN_TG && tg.requestContact) {
+      tg.requestContact((ok, res) => {
+        const p = res?.responseUnsafe?.contact?.phone_number;
+        if (ok && p) { f.phone = (p.startsWith("+") ? "" : "+") + p; save(); $("fPhone").value = f.phone; haptic("success"); toast("Номер получен из Telegram"); }
+        else toast("Номер не передан. Введите его вручную.");
+      });
+      return;
+    }
+    f.phone = "+7 928 000-00-00"; save(); $("fPhone").value = f.phone; toast("Демо: Telegram передал номер");
+  };
   $("bookForm").onsubmit = e => { e.preventDefault(); submitBooking(); };
   mainButton(`Отправить заявку · ${rub(q.total)}`, submitBooking);
 }
@@ -620,7 +670,7 @@ function submitBooking() {
   const digits = f.phone.replace(/\D/g, "");
   const problem = !f.name.trim() ? "Укажите имя." : digits.length < 10 ? "Укажите телефон, чтобы менеджер мог перезвонить." :
     !f.age ? "Подтвердите возраст и стаж: без этого машину не выдадут." : !f.consent ? "Нужно согласие на обработку персональных данных." : "";
-  if (problem) { err.textContent = problem; return; }
+  if (problem) { err.textContent = problem; haptic("error"); err.scrollIntoView({ block: "center" }); return; }
   const m = modelById(state.modelId), r = state.range;
   const recheck = rangeError(m.id, r.start, r.end);
   if (recheck) { err.textContent = recheck; return; }
@@ -631,6 +681,7 @@ function submitBooking() {
   state.lastCreated = bk.id;
   state.botQueue.unshift(bk.id);
   state.form = { ...f, comment: "" };
+  haptic("success");
   go("done");
 }
 function renderDone(v) {
@@ -715,6 +766,7 @@ function act(action, id, v) {
   else if (action === "issue") { b.status = "issued"; toast(`№${id}: машина выдана`); }
   else if (action === "return") { b.status = "returned"; toast(`№${id}: машина возвращена`); }
   else if (action === "cancel") { b.status = "cancelled"; toast(`№${id} отменена`); }
+  haptic(action === "decline" || action === "cancel" ? "warning" : "success");
   state.botQueue = state.botQueue.filter(x => x !== id || b.status === "new");
   save(); renderTop(); renderManager(v);
 }
