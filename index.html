@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Dadaev Car — прокат автомобилей в Махачкале. Прототип Telegram Mini App.">
+<style>
+:root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+html, body { height: 100%; }
+body { margin: 0; font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+</style>
+<title>Dadaev Car</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: Telegram Mini App column (max 520px), sticky top bar with role switch, fixed bottom main button like Telegram's MainButton. */
+:root {
+  --bg: #f3f2ee;
+  --surface: #ffffff;
+  --surface-2: #e9e7e1;
+  --fg: #17171a;
+  --muted: #6c6a66;
+  --line: #dcd9d2;
+  --accent: #f2c230;
+  --accent-ink: #17171a;
+  --accent-text: #8a6a00;
+  --ok: #1f8a52;
+  --warn: #b7791f;
+  --bad: #c2412d;
+  --info: #2f6fb5;
+  --busy: #d9d5cc;
+  --font-display: "Russo One", "Arial Black", system-ui, sans-serif;
+  --font-body: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f0f11; --surface: #19191c; --surface-2: #232327; --fg: #f1efe9; --muted: #9a978f; --line: #2c2c31;
+    --accent: #ffd353; --accent-ink: #17171a; --accent-text: #ffd353;
+    --ok: #4cc98a; --warn: #e8b04a; --bad: #f0786a; --info: #79aef0; --busy: #34343a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f0f11; --surface: #19191c; --surface-2: #232327; --fg: #f1efe9; --muted: #9a978f; --line: #2c2c31;
+  --accent: #ffd353; --accent-ink: #17171a; --accent-text: #ffd353;
+  --ok: #4cc98a; --warn: #e8b04a; --bad: #f0786a; --info: #79aef0; --busy: #34343a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.45; -webkit-tap-highlight-color: transparent; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.app { max-width: 520px; margin: 0 auto; min-height: 100%; padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+.gut { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* top bar */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top-row { display: flex; align-items: center; gap: 12px; padding-block: 10px; }
+.logo { width: 128px; height: 15px; background: var(--fg); -webkit-mask: url(img/logo.png) left center / contain no-repeat; mask: url(img/logo.png) left center / contain no-repeat; flex: none; }
+.back { border: 0; background: var(--surface-2); width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+.top-title { font-weight: 700; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.role { margin-left: auto; display: flex; background: var(--surface-2); border-radius: 999px; padding: 3px; flex: none; }
+.role button { border: 0; background: transparent; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.role button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgb(0 0 0 / .12); }
+.demo-note { font-size: 12px; color: var(--muted); padding-block: 0 8px; }
+
+/* hero */
+.hero { position: relative; margin-top: 12px; border-radius: 16px; overflow: hidden; aspect-ratio: 16 / 10; max-width: 100%; background: var(--surface-2); }
+.hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hero-text { position: absolute; inset: auto 0 0 0; padding: 48px 16px 14px; background: linear-gradient(to top, rgb(0 0 0 / .78), rgb(0 0 0 / 0)); color: #fff; display: grid; gap: 4px; }
+.hero h1 { font-family: var(--font-display); font-weight: 400; font-size: 24px; line-height: 1.1; margin: 0; text-wrap: balance; }
+.hero p { margin: 0; font-size: 13px; opacity: .9; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--muted); padding-block: 12px 4px; }
+.facts b { color: var(--fg); font-weight: 600; }
+
+/* chips */
+.chips { display: flex; gap: 8px; overflow-x: auto; padding-block: 12px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 14px; font-size: 14px; font-weight: 600; white-space: nowrap; flex: none; }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+
+/* catalog */
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 360px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.card { border: 0; padding: 0; text-align: left; background: var(--surface); border-radius: 14px; overflow: hidden; display: grid; grid-template-rows: auto 1fr; }
+.thumb { aspect-ratio: 4 / 3; background: var(--surface-2); display: grid; place-items: center; overflow: hidden; max-width: 100%; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.nophoto { font-family: var(--font-display); color: var(--muted); font-size: 13px; text-align: center; padding: 8px; }
+.card-body { padding: 10px 12px 12px; display: grid; gap: 4px; align-content: start; }
+.card-name { font-weight: 700; line-height: 1.25; }
+.card-meta { font-size: 12px; color: var(--muted); }
+.price { font-weight: 800; font-variant-numeric: tabular-nums; }
+.price small { font-weight: 500; color: var(--muted); font-size: 12px; }
+.avail { font-size: 12px; font-weight: 600; }
+.avail.ok { color: var(--ok); } .avail.no { color: var(--bad); }
+
+/* car page */
+.gallery { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; margin-top: 12px; scrollbar-width: none; }
+.gallery::-webkit-scrollbar { display: none; }
+.gallery .shot { flex: 0 0 100%; aspect-ratio: 4 / 3; border-radius: 16px; overflow: hidden; scroll-snap-align: start; background: var(--surface-2); display: grid; place-items: center; max-width: 100%; }
+.gallery.many .shot { flex-basis: 88%; }
+.gallery img { width: 100%; height: 100%; object-fit: cover; display: block; }
+h2 { font-size: 22px; line-height: 1.2; margin: 14px 0 4px; text-wrap: balance; }
+h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 22px 0 8px; font-weight: 700; }
+.specs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--line); border-radius: 12px; overflow: hidden; }
+.specs div { background: var(--surface); padding: 10px 12px; display: grid; gap: 2px; min-width: 0; }
+.specs span { font-size: 12px; color: var(--muted); }
+.specs b { font-weight: 600; }
+.desc { color: var(--muted); font-size: 14px; margin: 10px 0 0; }
+
+/* calendar */
+.cal { background: var(--surface); border-radius: 14px; padding: 12px; }
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-weight: 700; }
+.cal-head button { border: 0; background: var(--surface-2); width: 32px; height: 32px; border-radius: 50%; }
+.cal-head button:disabled { opacity: .35; cursor: default; }
+.dow, .days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; text-align: center; }
+.dow span { font-size: 11px; color: var(--muted); padding-block: 4px; text-transform: uppercase; }
+.day { border: 0; background: transparent; height: 40px; border-radius: 8px; font-weight: 600; font-variant-numeric: tabular-nums; position: relative; }
+.day:disabled { color: var(--muted); opacity: .4; cursor: default; }
+.day.busy { background: var(--busy); color: var(--muted); text-decoration: line-through; opacity: 1; }
+.day.in { background: color-mix(in srgb, var(--accent) 30%, transparent); border-radius: 0; }
+.day.start, .day.end { background: var(--accent); color: var(--accent-ink); }
+.day.start { border-radius: 8px 0 0 8px; } .day.end { border-radius: 0 8px 8px 0; } .day.start.end { border-radius: 8px; }
+.day.today::after { content: ""; position: absolute; left: 50%; bottom: 5px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: currentColor; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); margin-top: 10px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 5px; }
+.hint { font-size: 13px; color: var(--muted); margin-top: 8px; min-height: 1.4em; }
+.hint.err { color: var(--bad); }
+
+/* summary & form */
+.sum { background: var(--surface); border-radius: 14px; padding: 4px 14px; }
+.row { display: flex; justify-content: space-between; gap: 12px; padding-block: 10px; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.row:first-child { border-top: 0; }
+.row span:first-child { color: var(--muted); }
+.row.total { font-weight: 800; font-size: 17px; }
+.row.total span:first-child { color: var(--fg); }
+.form { display: grid; gap: 12px; }
+.field { display: grid; gap: 6px; }
+.field label, .field .lbl { font-size: 13px; font-weight: 600; color: var(--muted); }
+.field input, .field select, .field textarea { width: 100%; font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; font-size: 16px; }
+.field textarea { resize: vertical; min-height: 70px; }
+.seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.seg button { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 6px; font-size: 13px; font-weight: 600; line-height: 1.25; }
+.seg button small { display: block; font-weight: 500; color: var(--muted); font-size: 12px; }
+.seg button[aria-pressed="true"] { border-color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); }
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
+.check input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--fg); flex: none; }
+.tg-phone { display: flex; gap: 8px; }
+.tg-phone input { flex: 1; min-width: 0; }
+.tg-phone button { border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 0 12px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.err-text { color: var(--bad); font-size: 13px; }
+
+/* main button (Telegram MainButton look) */
+.main-btn-wrap { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: linear-gradient(to top, var(--bg) 70%, transparent); padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); padding-top: 18px; }
+.main-btn-inner { max-width: 520px; margin: 0 auto; }
+.main-btn { width: 100%; border: 0; border-radius: 12px; background: var(--accent); color: var(--accent-ink); font-weight: 800; font-size: 16px; padding: 15px; }
+.main-btn:disabled { background: var(--surface-2); color: var(--muted); cursor: default; }
+
+/* bookings & manager */
+.list { display: grid; gap: 10px; }
+.bk { background: var(--surface); border-radius: 14px; padding: 12px 14px; display: grid; gap: 8px; border-left: 4px solid var(--line); }
+.bk[data-s="new"] { border-left-color: var(--info); }
+.bk[data-s="confirmed"] { border-left-color: var(--ok); }
+.bk[data-s="issued"] { border-left-color: var(--warn); }
+.bk[data-s="returned"] { border-left-color: var(--muted); }
+.bk[data-s="declined"], .bk[data-s="cancelled"] { border-left-color: var(--bad); opacity: .8; }
+.bk-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.bk-title { font-weight: 700; min-width: 0; }
+.bk-meta { font-size: 13px; color: var(--muted); display: grid; gap: 2px; }
+.pill { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 9px; white-space: nowrap; background: var(--surface-2); }
+.pill.new { color: var(--info); } .pill.confirmed { color: var(--ok); } .pill.issued { color: var(--warn); }
+.pill.returned { color: var(--muted); } .pill.declined, .pill.cancelled { color: var(--bad); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 8px 12px; font-size: 13px; font-weight: 700; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.danger { color: var(--bad); }
+.tabs { display: flex; gap: 4px; padding-block: 0 10px; }
+.tabs button { flex: 1; border: 0; background: transparent; padding: 8px 4px; border-radius: 10px; font-weight: 700; font-size: 14px; color: var(--muted); }
+.tabs button[aria-pressed="true"] { background: var(--surface-2); color: var(--fg); }
+.count { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--info); color: #fff; font-size: 11px; margin-left: 4px; vertical-align: 1px; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.stat { background: var(--surface); border-radius: 12px; padding: 10px 12px; display: grid; gap: 2px; }
+.stat b { font-size: 20px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 12px; color: var(--muted); }
+
+/* bot message */
+.botmsg { background: var(--surface); border-radius: 14px; padding: 12px 14px; display: grid; gap: 8px; border: 1px solid var(--line); }
+.botmsg-head { display: flex; gap: 8px; align-items: center; font-size: 13px; font-weight: 700; }
+.botmsg-head i { width: 26px; height: 26px; border-radius: 50%; background: var(--fg); display: grid; place-items: center; flex: none; }
+.botmsg-head i::before { content: ""; width: 18px; height: 6px; background: var(--bg); -webkit-mask: url(img/logo.png) center / contain no-repeat; mask: url(img/logo.png) center / contain no-repeat; }
+.botmsg pre { margin: 0; font: inherit; font-size: 14px; white-space: pre-wrap; }
+.botmsg .actions .btn { flex: 1; }
+
+/* board */
+.board-wrap { overflow-x: auto; background: var(--surface); border-radius: 14px; }
+.board { border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+.board th, .board td { border-bottom: 1px solid var(--line); padding: 0; height: 34px; }
+.board thead th { font-weight: 600; color: var(--muted); min-width: 34px; text-align: center; padding: 4px 0; line-height: 1.2; }
+.board thead th.we { color: var(--bad); }
+.board thead th.today { color: var(--fg); background: color-mix(in srgb, var(--accent) 25%, transparent); }
+.board th.unit { position: sticky; left: 0; z-index: 1; background: var(--surface); text-align: left; padding: 0 10px; white-space: nowrap; font-weight: 600; color: var(--fg); border-right: 1px solid var(--line); }
+.board th.unit small { display: block; color: var(--muted); font-weight: 500; }
+.board td { position: relative; min-width: 34px; }
+.cell { position: absolute; inset: 5px 0; }
+.cell.confirmed { background: var(--ok); }
+.cell.issued { background: var(--warn); }
+.cell.new { background: repeating-linear-gradient(45deg, var(--info) 0 4px, transparent 4px 8px); opacity: .7; }
+.cell.repair { background: repeating-linear-gradient(45deg, var(--muted) 0 3px, transparent 3px 7px); }
+.cell.s { left: 3px; border-radius: 5px 0 0 5px; } .cell.e { right: 3px; border-radius: 0 5px 5px 0; }
+.fleet-item { background: var(--surface); border-radius: 12px; padding: 10px 12px; display: flex; gap: 12px; align-items: center; }
+.fleet-item .ph { width: 64px; height: 48px; border-radius: 8px; overflow: hidden; background: var(--surface-2); flex: none; }
+.fleet-item .ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fleet-item .info { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.fleet-item .info b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fleet-item .info span { font-size: 12px; color: var(--muted); }
+.price-input { width: 84px; font: inherit; font-weight: 700; text-align: right; border: 1px solid var(--line); background: var(--bg); color: var(--fg); border-radius: 8px; padding: 6px 8px; font-variant-numeric: tabular-nums; }
+.switch { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.switch input { accent-color: var(--bad); width: 18px; height: 18px; }
+
+.success { text-align: center; display: grid; gap: 10px; justify-items: center; padding-block: 36px 12px; }
+.success .mark { width: 64px; height: 64px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-size: 30px; font-weight: 800; }
+.success h2 { margin: 0; }
+.success p { margin: 0; color: var(--muted); max-width: 36ch; }
+.empty { text-align: center; color: var(--muted); padding: 32px 12px; background: var(--surface); border-radius: 14px; }
+.foot { font-size: 12px; color: var(--muted); padding-block: 24px 8px; display: grid; gap: 4px; }
+.toast { position: fixed; left: 50%; top: calc(64px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 20; background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; max-width: calc(100% - 32px); box-shadow: 0 6px 24px rgb(0 0 0 / .25); }
+@media (prefers-reduced-motion: no-preference) {
+  .view { animation: in .18s ease-out; }
+  @keyframes in { from { transform: translateY(6px); } to { transform: none; } }
+}
+</style>
+
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <div class="gut">
+      <div class="top-row" id="topRow"></div>
+      <div class="demo-note">Прототип. Машины и цены с Яндекс Карт, условия аренды предварительные, заявки демонстрационные.</div>
+    </div>
+  </header>
+  <main class="gut view" id="view"></main>
+</div>
+<div class="main-btn-wrap gut" id="mainBtnWrap" hidden>
+  <div class="main-btn-inner"><button class="main-btn" id="mainBtn" type="button"></button></div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+// ---------- справочник ----------
+const COMPANY = {
+  name: "Dadaev Car",
+  city: "Махачкала",
+  address: "проспект Петра I, 47",
+  phone: "+7 928 501-55-33",
+  email: "dadaevcar@ya.ru",
+  hours: "ежедневно 09:00–18:00",
+};
+
+const CLASSES = { econom: "Эконом", comfort: "Комфорт", business: "Бизнес", suv: "Кроссоверы", van: "Минивэн", premium: "Премиум" };
+
+// Модели и цены — с карточки организации на Яндекс Картах (раздел «Цены»).
+const MODELS = [
+  { id: "solaris", name: "Hyundai Solaris", cls: "econom", price: 3000, engine: "1.6 л, 123 л.с.", gear: "Автомат", fuel: "Бензин", drive: "Передний", seats: 5,
+    extra: "Климат-контроль", photos: ["solaris", "solaris-2"], desc: "Комплектация Prestige. Одна машина с ГБО." },
+  { id: "rio", name: "Kia Rio", cls: "econom", price: 3000, engine: "1.6 л, 123 л.с.", gear: "Автомат", fuel: "Бензин", drive: "Передний", seats: 5,
+    extra: "Кожаный салон, Android Auto", photos: ["rio", "rio-2"], desc: "" },
+  { id: "polo", name: "Volkswagen Polo", cls: "econom", price: 3000, engine: "1.6 л, 110 л.с.", gear: "Автомат", fuel: "Бензин", drive: "Передний", seats: 5,
+    extra: "Кожаный салон, климат-контроль", photos: ["polo", "polo-2"], desc: "Есть версия GT с Android Auto." },
+  { id: "octavia", name: "Skoda Octavia", cls: "comfort", price: 4200, engine: "1.6 л, 110 л.с.", gear: "Автомат", fuel: "Бензин", drive: "Передний", seats: 5,
+    extra: "Кожаный салон, Android Auto", photos: ["octavia"], desc: "" },
+  { id: "camry55", name: "Toyota Camry 55", cls: "business", price: 5000, engine: "2.5 л, 181 л.с.", gear: "Автомат", fuel: "Бензин", drive: "Передний", seats: 5,
+    extra: "Кожаный салон, Android Auto", photos: ["camry55"], desc: "" },
+  { id: "camry75", name: "Toyota Camry 75", cls: "business", price: 7000, engine: "2.5 л", gear: "Автомат", fuel: "Бензин", drive: "Передний", seats: 5,
+    extra: "Комплектация Luxe Safety", photos: ["camry75"], desc: "Надёжный и комфортный автомобиль, который отвезёт вас хоть до Китая." },
+  { id: "camry70", name: "Toyota Camry 70", cls: "business", price: 7500, engine: "2.5 л, 181 л.с.", gear: "Автомат", fuel: "Бензин", drive: "Передний", seats: 5,
+    extra: "Кожаный салон", photos: ["camry70", "camry70-2"], desc: "" },
+  { id: "creta", name: "Hyundai Creta", cls: "suv", price: 5000, engine: "1.6–2.0 л, 123 л.с.", gear: "Автомат", fuel: "Бензин", drive: "Передний", seats: 5,
+    extra: "Кожаный салон, Android Auto", photos: ["creta", "creta-2"], desc: "" },
+  { id: "sportage", name: "Kia Sportage", cls: "suv", price: 5000, engine: "2.0 л, 150 л.с.", gear: "Автомат", fuel: "Бензин", drive: "Передний", seats: 5,
+    extra: "Кожаный салон, Android Auto", photos: ["sportage"], desc: "" },
+  { id: "rav4", name: "Toyota RAV4 2020", cls: "suv", price: 7500, engine: "2.5 л", gear: "Автомат", fuel: "Бензин", drive: "Полный", seats: 5,
+    extra: "Экокожа", photos: [], desc: "" },
+  { id: "sorento", name: "Kia Sorento", cls: "suv", price: 8500, engine: "2.5 л, 180 л.с.", gear: "Автомат", fuel: "Бензин", drive: "Полный", seats: 7,
+    extra: "Трёхзонный климат-контроль", photos: ["sorento", "sorento-2"], desc: "" },
+  { id: "starex", name: "Hyundai Grand Starex", cls: "van", price: 9900, engine: "2.5 л, 175 л.с.", gear: "Автомат", fuel: "Дизель", drive: "Задний", seats: 8,
+    extra: "Кожаный салон, климат-контроль", photos: ["starex", "starex-2"], desc: "Для семейных поездок, компаний, гостей и VIP-экскурсий." },
+  { id: "eclass", name: "Mercedes-Benz E-Class", cls: "premium", price: 10000, engine: "2.5 л", gear: "Автомат", fuel: "Бензин", drive: "Задний", seats: 5,
+    extra: "", photos: ["eclass", "eclass-2"], desc: "" },
+  { id: "bmw430", name: "BMW 430i кабриолет", cls: "premium", price: 15000, engine: "2.5 л", gear: "Автомат", fuel: "Бензин", drive: "Задний", seats: 4,
+    extra: "Красный кожаный салон", photos: ["bmw430", "bmw430-2"], desc: "" },
+  { id: "x7", name: "BMW X7", cls: "premium", price: 20000, engine: "", gear: "Автомат", fuel: "", drive: "Полный", seats: 7,
+    extra: "", photos: [], desc: "Когда тебе нечего доказывать." },
+];
+
+// Конкретные машины (единицы автопарка). Номера в скобках — как на Яндекс Картах.
+const UNITS_SEED = [
+  ["solaris", "Solaris · белый", 3200], ["solaris", "Solaris · серый", 3000], ["solaris", "Solaris II рест.", 3500], ["solaris", "Solaris 2021", 3500],
+  ["rio", "Rio II · Android Auto", 3200], ["rio", "Rio II", 3000], ["rio", "Rio (981)", 3200],
+  ["polo", "Polo GT", 3200], ["polo", "Polo (353)", 3000],
+  ["octavia", "Octavia", 4200], ["camry55", "Camry 55", 5000], ["camry75", "Camry 75", 7000], ["camry70", "Camry 70", 7500],
+  ["creta", "Creta (313)", 5000], ["creta", "Creta (980)", 5000], ["creta", "Creta (844)", 5000],
+  ["sportage", "Sportage", 5000], ["rav4", "RAV4", 7500], ["sorento", "Sorento", 8500], ["starex", "Grand Starex", 9900],
+  ["eclass", "E-Class", 10000], ["bmw430", "430i", 15000], ["x7", "X7", 20000],
+].map(([model, label, price], i) => ({ id: "u" + (i + 1), model, label, price, repair: false }));
+
+const DELIVERY = [
+  { id: "office", name: "В офисе", note: "Петра I, 47", cost: 0 },
+  { id: "airport", name: "Аэропорт", note: "подача", cost: 1000 },
+  { id: "dagestan", name: "По Дагестану", note: "подача", cost: 1000 },
+];
+
+// Условия по классам: сайт и Яндекс Карты их не публикуют, значения предварительные.
+const CLASS_RULES = {
+  econom:   { deposit: 5000,  age: 21, exp: 2 },
+  comfort:  { deposit: 10000, age: 21, exp: 2 },
+  business: { deposit: 10000, age: 23, exp: 3 },
+  suv:      { deposit: 10000, age: 23, exp: 3 },
+  van:      { deposit: 15000, age: 25, exp: 5 },
+  premium:  { deposit: 30000, age: 25, exp: 5 },
+};
+const DEPOSIT_OVERRIDE = { x7: 50000 };
+const rulesOf = m => ({ ...CLASS_RULES[m.cls], deposit: DEPOSIT_OVERRIDE[m.id] || CLASS_RULES[m.cls].deposit });
+const DISCOUNTS = [[14, 15], [7, 10], [3, 5]]; // [от суток, скидка %]
+const discountFor = n => (DISCOUNTS.find(([d]) => n >= d) || [0, 0])[1];
+const MILEAGE = { perDay: 300, over: 7 };
+// Подача — как на сайте: 1 000 ₽, при заказе от 20 000 ₽ — 2 000 ₽.
+const deliveryCost = (del, base) => del.cost ? (base >= 20000 ? 2000 : 1000) : 0;
+
+const TERMS = [
+  ["Кто может арендовать", "Гражданин с паспортом и водительским удостоверением категории B. Эконом и комфорт: от 21 года и стаж от 2 лет. Бизнес и кроссоверы: от 23 лет и стаж от 3 лет. Минивэн и премиум: от 25 лет и стаж от 5 лет."],
+  ["Залог", "Эконом 5 000 ₽, комфорт, бизнес и кроссоверы 10 000 ₽, минивэн 15 000 ₽, премиум 30 000 ₽, BMW X7 50 000 ₽. Возвращаем при сдаче машины без повреждений и штрафов."],
+  ["Скидки за срок", "От 3 суток: −5 %. От 7 суток: −10 %. От 14 суток: −15 %."],
+  ["Пробег", "300 км в сутки включены в цену. Сверх лимита 7 ₽ за км. Поездки в Дербент, Грозный и горы разрешены, выезд за пределы Северного Кавказа по согласованию."],
+  ["Подача и возврат", "В офисе на проспекте Петра I, 47 бесплатно. В аэропорт и по Дагестану 1 000 ₽, при заказе от 20 000 ₽ 2 000 ₽. Офис работает ежедневно с 09:00 до 18:00."],
+  ["Топливо и чистота", "Возвращайте машину с тем же уровнем топлива, что при получении. Если машина сильно загрязнена, мойка 500 ₽."],
+  ["Отмена брони", "Бесплатно не позднее чем за 24 часа до получения. Позже залог не удерживаем, но просим предупредить звонком."],
+  ["Дополнительно", "Детское кресло и второй водитель бесплатно. Авто с водителем и экскурсии по Дагестану по запросу."],
+];
+
+const STATUS = { new: "Новая", confirmed: "Подтверждена", issued: "Выдана", returned: "Возвращена", declined: "Отклонена", cancelled: "Отменена" };
+const BLOCKING = new Set(["confirmed", "issued"]);
+
+// ---------- даты ----------
+const MS = 86400000;
+const pad = n => String(n).padStart(2, "0");
+const iso = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+const parse = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return iso(d); };
+const diffDays = (a, b) => Math.round((parse(b) - parse(a)) / MS);
+const TODAY = iso(new Date());
+const MONTHS = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"];
+const MONTHS_GEN = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
+const DOW = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+const fmtDate = s => { const d = parse(s); return d.getDate() + " " + MONTHS_GEN[d.getMonth()]; };
+const fmtRange = (a, b) => fmtDate(a) + " — " + fmtDate(b);
+const rub = n => n.toLocaleString("ru-RU").replace(/,/g, " ") + " ₽";
+const plural = (n, one, few, many) => { const m10 = n % 10, m100 = n % 100; return m10 === 1 && m100 !== 11 ? one : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? few : many; };
+const sutki = n => n + " " + plural(n, "сутки", "суток", "суток");
+
+// ---------- состояние ----------
+const STORE_KEY = "dadaev-proto-v1";
+function seedBookings() {
+  const b = (id, unit, model, s, days, status, client, phone, delivery = "office") =>
+    ({ id, unit, model, start: addDays(TODAY, s), end: addDays(TODAY, s + days), status, client, phone, delivery, mine: false, demo: true, created: Date.now() - (10 - id % 10) * 3600000 });
+  return [
+    b(1041, "u1", "solaris", -2, 5, "issued", "Магомед К.", "+7 9•• •••-12-40"),
+    b(1042, "u5", "rio", 1, 3, "confirmed", "Анастасия М.", "+7 9•• •••-55-01", "airport"),
+    b(1043, "u11", "camry55", 0, 4, "issued", "Руслан А.", "+7 9•• •••-09-77"),
+    b(1044, "u14", "creta", 3, 6, "confirmed", "Фёдор Е.", "+7 9•• •••-31-18"),
+    b(1045, "u20", "starex", 5, 2, "confirmed", "Шамиль Г.", "+7 9•• •••-44-90", "dagestan"),
+    b(1046, "u21", "eclass", 2, 2, "new", "Никита Н.", "+7 9•• •••-70-25", "airport"),
+    b(1047, "u10", "octavia", 4, 5, "new", "Аминат Д.", "+7 9•• •••-63-11"),
+    b(1048, "u22", "bmw430", -6, 3, "returned", "Ислам Т.", "+7 9•• •••-28-36"),
+    b(1049, "u12", "camry75", -1, 8, "issued", "Арсен М.", "+7 9•• •••-81-52"),
+    b(1050, "u2", "solaris", 6, 4, "confirmed", "Ольга С.", "+7 9•• •••-17-63"),
+    b(1051, "u3", "solaris", 0, 10, "confirmed", "Гаджи О.", "+7 9•• •••-90-04"),
+    b(1052, "u4", "solaris", 1, 9, "confirmed", "Мадина Р.", "+7 9•• •••-22-47"),
+  ];
+}
+function freshState() {
+  const units = UNITS_SEED.map(u => ({ ...u }));
+  units.find(u => u.id === "u19").repair = true;
+  return { role: "client", screen: "catalog", filter: "all", modelId: null, range: { start: null, end: null }, calMonth: TODAY.slice(0, 7),
+    form: { name: "", phone: "", delivery: "office", seat: false, comment: "", age: false, consent: false }, units, bookings: seedBookings(),
+    nextId: 1053, mgrTab: "requests", lastCreated: null, botQueue: [] };
+}
+let state;
+try { const raw = localStorage.getItem(STORE_KEY); state = raw ? JSON.parse(raw) : freshState(); } catch (e) { state = freshState(); }
+if (!state || !state.units) state = freshState();
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
+
+// ---------- логика занятости ----------
+const modelById = id => MODELS.find(m => m.id === id);
+const unitById = id => state.units.find(u => u.id === id);
+const unitsOf = modelId => state.units.filter(u => u.model === modelId);
+const overlaps = (aS, aE, bS, bE) => aS < bE && bS < aE;
+function unitFree(unit, start, end, ignoreId) {
+  if (unit.repair) return false;
+  return !state.bookings.some(b => b.unit === unit.id && b.id !== ignoreId && BLOCKING.has(b.status) && overlaps(b.start, b.end, start, end));
+}
+function freeUnits(modelId, start, end, ignoreId) { return unitsOf(modelId).filter(u => unitFree(u, start, end, ignoreId)); }
+const dayBusy = (modelId, day) => freeUnits(modelId, day, addDays(day, 1)).length === 0;
+function rangeError(modelId, start, end) {
+  for (let d = start; d < end; d = addDays(d, 1)) if (dayBusy(modelId, d)) return "На " + fmtDate(d) + " свободных машин нет. Выберите другие даты.";
+  return "";
+}
+const minPrice = modelId => Math.min(...unitsOf(modelId).map(u => u.price));
+
+// ---------- рендер ----------
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const img = (name, alt) => name ? `<img src="img/${name}.jpg" alt="${esc(alt)}" loading="lazy">` : `<div class="nophoto">Фото<br>скоро будет</div>`;
+
+let toastTimer;
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.hidden = true), 2600); }
+
+function go(screen, patch = {}) { Object.assign(state, patch, { screen }); save(); render(); window.scrollTo(0, 0); }
+
+function mainButton(text, onClick, disabled = false) {
+  const wrap = $("mainBtnWrap"), btn = $("mainBtn");
+  if (!text) { wrap.hidden = true; btn.onclick = null; return; }
+  wrap.hidden = false; btn.textContent = text; btn.disabled = disabled; btn.onclick = onClick;
+}
+
+function renderTop() {
+  const s = state.screen, client = state.role === "client";
+  const backTargets = { car: "catalog", book: "car", done: "catalog", terms: state.termsBack || "catalog" };
+  const titles = { car: modelById(state.modelId)?.name || "", book: "Заявка", done: "", mine: "Мои брони", terms: "Условия аренды" };
+  const back = client && backTargets[s] ? `<button class="back" id="backBtn" type="button" aria-label="Назад">←</button>` : "";
+  const title = client && titles[s] ? `<div class="top-title">${esc(titles[s])}</div>` : `<div class="logo" role="img" aria-label="Dadaev Car"></div>`;
+  $("topRow").innerHTML = back + title + `
+    <div class="role" role="group" aria-label="Режим прототипа">
+      <button type="button" data-role="client" aria-pressed="${client}">Клиент</button>
+      <button type="button" data-role="manager" aria-pressed="${!client}">Менеджер${newCount() ? `<span class="count">${newCount()}</span>` : ""}</button>
+    </div>`;
+  if (back) $("backBtn").onclick = () => go(backTargets[s]);
+  $("topRow").querySelectorAll("[data-role]").forEach(b => b.onclick = () => {
+    state.role = b.dataset.role; if (state.role === "client" && state.screen.startsWith("mgr")) state.screen = "catalog";
+    if (state.role === "manager") state.screen = "mgr"; save(); render(); window.scrollTo(0, 0);
+  });
+}
+const newCount = () => state.bookings.filter(b => b.status === "new").length;
+
+function render() {
+  renderTop();
+  const v = $("view");
+  v.classList.remove("view"); void v.offsetWidth; v.classList.add("view");
+  if (state.role === "manager") return renderManager(v);
+  ({ catalog: renderCatalog, car: renderCar, book: renderBook, done: renderDone, mine: renderMine, terms: renderTerms }[state.screen] || renderCatalog)(v);
+}
+
+function renderTerms(v) {
+  v.innerHTML = `<h2>Условия аренды</h2>
+    <div class="list">${TERMS.map(([t, d]) => `<div class="bk"><div class="bk-title">${t}</div><div class="bk-meta"><span>${d}</span></div></div>`).join("")}</div>
+    <div class="foot"><span>Вопросы: ${COMPANY.phone}, WhatsApp по тому же номеру</span><span>${COMPANY.email}</span></div>`;
+  mainButton(state.termsBack === "car" ? "Вернуться к машине" : "В каталог", () => go(state.termsBack || "catalog"));
+}
+const termsLink = from => `<button class="btn" type="button" data-terms="${from}">Условия аренды</button>`;
+function bindTerms(v) { v.querySelectorAll("[data-terms]").forEach(b => b.onclick = () => go("terms", { termsBack: b.dataset.terms })); }
+
+// ----- клиент: каталог -----
+function renderCatalog(v) {
+  const filters = [["all", "Все"], ...Object.entries(CLASSES)];
+  const list = MODELS.filter(m => state.filter === "all" || m.cls === state.filter);
+  const tomorrow = addDays(TODAY, 1);
+  const mineCount = state.bookings.filter(b => b.mine).length;
+  v.innerHTML = `
+    <div class="hero"><img src="img/hero.jpg" alt="Skoda Octavia на берегу Каспия на закате">
+      <div class="hero-text"><h1>Прокат авто в Махачкале</h1><p>${MODELS.length} моделей · подача в аэропорт и по Дагестану</p></div></div>
+    <div class="facts"><span><b>${COMPANY.hours}</b></span><span>${COMPANY.address}</span><span>★ 5,0 · 77 отзывов</span></div>
+    <div class="actions" style="padding-top:8px">${termsLink("catalog")}<span class="hint" style="margin:0;align-self:center">Скидка до 15 % от 7 суток</span></div>
+    <div class="chips" role="group" aria-label="Класс">${filters.map(([id, n]) => `<button class="chip" type="button" data-f="${id}" aria-pressed="${state.filter === id}">${n}</button>`).join("")}</div>
+    <div class="grid">${list.map(m => {
+      const free = freeUnits(m.id, TODAY, tomorrow).length;
+      return `<button class="card" type="button" data-m="${m.id}">
+        <div class="thumb">${img(m.photos[0], m.name)}</div>
+        <div class="card-body"><div class="card-name">${esc(m.name)}</div>
+          <div class="card-meta">${CLASSES[m.cls]} · ${m.gear.toLowerCase()} · ${m.seats} мест</div>
+          <div class="price">от ${rub(minPrice(m.id))} <small>/ сутки</small></div>
+          <div class="avail ${free ? "ok" : "no"}">${free ? "Свободна сегодня" : "Сегодня занята"}</div></div></button>`;
+    }).join("")}</div>
+    <div class="foot"><span>${COMPANY.name} · ${COMPANY.city}, ${COMPANY.address}</span><span>${COMPANY.phone} · ${COMPANY.email}</span></div>`;
+  bindTerms(v);
+  v.querySelectorAll("[data-f]").forEach(b => b.onclick = () => { state.filter = b.dataset.f; save(); render(); });
+  v.querySelectorAll("[data-m]").forEach(b => b.onclick = () => go("car", { modelId: b.dataset.m, range: { start: null, end: null }, calMonth: TODAY.slice(0, 7) }));
+  mainButton(mineCount ? `Мои брони · ${mineCount}` : "", () => go("mine"));
+}
+
+// ----- клиент: карточка машины с календарём -----
+function renderCar(v) {
+  const m = modelById(state.modelId);
+  const units = unitsOf(m.id);
+  const r = state.range;
+  const rl = rulesOf(m);
+  const specs = [["Двигатель", m.engine || "уточняется"], ["Коробка", m.gear], ["Топливо", m.fuel || "уточняется"], ["Привод", m.drive], ["Мест", m.seats], ["В парке", units.length + " " + plural(units.length, "машина", "машины", "машин")],
+    ["Залог", rub(rl.deposit)], ["Водитель", `от ${rl.age} лет, стаж от ${rl.exp}`], ["Пробег", `${MILEAGE.perDay} км/сутки`], ["Скидка", "до 15 % за срок"]];
+  v.innerHTML = `
+    <div class="gallery ${m.photos.length > 1 ? "many" : ""}">${(m.photos.length ? m.photos : [null]).map(p => `<div class="shot">${img(p, m.name)}</div>`).join("")}</div>
+    <h2>${esc(m.name)}</h2>
+    <div class="price">от ${rub(minPrice(m.id))} <small>/ сутки · ${CLASSES[m.cls]}</small></div>
+    ${m.extra || m.desc ? `<p class="desc">${esc([m.extra, m.desc].filter(Boolean).join(". "))}</p>` : ""}
+    <h3>Характеристики</h3>
+    <div class="specs">${specs.map(([k, val]) => `<div><span>${k}</span><b>${esc(val)}</b></div>`).join("")}</div>
+    <div class="actions" style="margin-top:10px">${termsLink("car")}</div>
+    <h3>Даты аренды</h3>
+    <div class="cal" id="cal"></div>
+    <div class="hint" id="hint"></div>`;
+  bindTerms(v);
+  renderCal();
+}
+function renderCal() {
+  const m = modelById(state.modelId), r = state.range;
+  const [y, mo] = state.calMonth.split("-").map(Number);
+  const first = new Date(y, mo - 1, 1), daysIn = new Date(y, mo, 0).getDate();
+  const lead = (first.getDay() + 6) % 7;
+  const maxMonth = iso(new Date(new Date().getFullYear(), new Date().getMonth() + 3, 1)).slice(0, 7);
+  let cells = "";
+  for (let i = 0; i < lead; i++) cells += "<span></span>";
+  for (let d = 1; d <= daysIn; d++) {
+    const day = `${y}-${pad(mo)}-${pad(d)}`;
+    const past = day < TODAY, busy = !past && dayBusy(m.id, day);
+    const cls = ["day"];
+    if (busy) cls.push("busy");
+    if (day === TODAY) cls.push("today");
+    if (r.start && day === r.start) cls.push("start");
+    if (r.end && day === r.end) cls.push("end");
+    if (r.start && r.end && day > r.start && day < r.end) cls.push("in");
+    if (r.start && !r.end && day === r.start) cls.push("end");
+    cells += `<button type="button" class="${cls.join(" ")}" data-d="${day}" ${past ? "disabled" : ""} aria-label="${fmtDate(day)}${busy ? ", занято" : ""}">${d}</button>`;
+  }
+  const cal = $("cal");
+  cal.innerHTML = `
+    <div class="cal-head"><button type="button" id="prevM" aria-label="Предыдущий месяц" ${state.calMonth <= TODAY.slice(0, 7) ? "disabled" : ""}>‹</button>
+      <span>${MONTHS[mo - 1][0].toUpperCase() + MONTHS[mo - 1].slice(1)} ${y}</span>
+      <button type="button" id="nextM" aria-label="Следующий месяц" ${state.calMonth >= maxMonth ? "disabled" : ""}>›</button></div>
+    <div class="dow">${["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map(d => `<span>${d}</span>`).join("")}</div>
+    <div class="days">${cells}</div>
+    <div class="legend"><span><i style="background:var(--accent)"></i>Ваши даты</span><span><i style="background:var(--busy)"></i>Все машины заняты</span></div>`;
+  const shift = n => { const d = new Date(y, mo - 1 + n, 1); state.calMonth = iso(d).slice(0, 7); save(); renderCal(); };
+  $("prevM").onclick = () => shift(-1); $("nextM").onclick = () => shift(1);
+  cal.querySelectorAll("[data-d]").forEach(b => b.onclick = () => pickDay(b.dataset.d));
+  updateCarFooter();
+}
+function pickDay(day) {
+  const r = state.range, m = modelById(state.modelId);
+  if (!r.start || r.end || day <= r.start) {
+    if (dayBusy(m.id, day)) { setHint("На эту дату все машины заняты.", true); return; }
+    state.range = { start: day, end: null };
+  } else {
+    const err = rangeError(m.id, r.start, day);
+    if (err) { setHint(err, true); return; }
+    state.range = { start: r.start, end: day };
+  }
+  save(); renderCal();
+}
+function setHint(text, err) { const h = $("hint"); if (!h) return; h.textContent = text; h.className = "hint" + (err ? " err" : ""); }
+function updateCarFooter() {
+  const r = state.range, m = modelById(state.modelId);
+  if (!r.start) { setHint("Выберите день получения машины."); mainButton("Выберите даты", null, true); return; }
+  if (!r.end) { setHint("Получение " + fmtDate(r.start) + ". Теперь выберите день возврата."); mainButton("Выберите день возврата", null, true); return; }
+  const n = diffDays(r.start, r.end), disc = discountFor(n);
+  const base = Math.round(minPrice(m.id) * n * (100 - disc) / 100);
+  setHint(fmtRange(r.start, r.end) + " · " + sutki(n) + (disc ? ` · скидка ${disc} %` : n < 3 ? " · от 3 суток скидка 5 %" : ""));
+  mainButton(`Забронировать · ${rub(base)}`, () => go("book"));
+}
+
+// ----- клиент: заявка -----
+function quote() {
+  const m = modelById(state.modelId), r = state.range, f = state.form;
+  const n = diffDays(r.start, r.end), full = minPrice(m.id) * n, disc = discountFor(n);
+  const off = Math.round(full * disc / 100), base = full - off;
+  const del = DELIVERY.find(d => d.id === f.delivery), delCost = deliveryCost(del, base);
+  return { n, full, disc, off, base, del, delCost, deposit: rulesOf(m).deposit, total: base + delCost };
+}
+function renderBook(v) {
+  const m = modelById(state.modelId), r = state.range, f = state.form, q = quote();
+  v.innerHTML = `
+    <h2>${esc(m.name)}</h2>
+    <div class="hint">${fmtRange(r.start, r.end)} · ${sutki(q.n)}</div>
+    <h3>Где получить</h3>
+    <div class="seg" role="group" aria-label="Место получения">${DELIVERY.map(d => `<button type="button" data-del="${d.id}" aria-pressed="${f.delivery === d.id}">${d.name}<small>${d.cost ? "+" + rub(deliveryCost(d, q.base)) : d.note}</small></button>`).join("")}</div>
+    <h3>Стоимость</h3>
+    <div class="sum">
+      <div class="row"><span>${rub(minPrice(m.id))} × ${sutki(q.n)}</span><span>${rub(q.full)}</span></div>
+      ${q.disc ? `<div class="row"><span>Скидка за срок ${q.disc} %</span><span>−${rub(q.off)}</span></div>` : ""}
+      <div class="row"><span>Подача: ${q.del.name.toLowerCase()}</span><span>${q.delCost ? rub(q.delCost) : "бесплатно"}</span></div>
+      <div class="row"><span>Детское кресло</span><span>${f.seat ? "бесплатно" : "не нужно"}</span></div>
+      <div class="row"><span>Пробег</span><span>${MILEAGE.perDay * q.n} км включено</span></div>
+      <div class="row total"><span>Итого за аренду</span><span>${rub(q.total)}</span></div>
+      <div class="row"><span>Залог при получении</span><span>${rub(q.deposit)}, вернём</span></div>
+    </div>
+    <h3>Контакты</h3>
+    <form class="form" id="bookForm" novalidate>
+      <div class="field"><label for="fName">Имя</label><input id="fName" autocomplete="name" value="${esc(f.name)}" placeholder="Как к вам обращаться"></div>
+      <div class="field"><label for="fPhone">Телефон</label>
+        <div class="tg-phone"><input id="fPhone" type="tel" autocomplete="tel" value="${esc(f.phone)}" placeholder="+7 900 000-00-00">
+        <button type="button" id="tgPhone">Из Telegram</button></div></div>
+      <label class="check"><input type="checkbox" id="fSeat" ${f.seat ? "checked" : ""}> Нужно детское кресло</label>
+      <div class="field"><label for="fComment">Комментарий</label><textarea id="fComment" placeholder="Время получения, номер рейса и т. п.">${esc(f.comment)}</textarea></div>
+      <label class="check"><input type="checkbox" id="fAge" ${f.age ? "checked" : ""}> Мне есть ${rulesOf(m).age} ${plural(rulesOf(m).age, "год", "года", "лет")}, стаж вождения от ${rulesOf(m).exp} ${plural(rulesOf(m).exp, "года", "лет", "лет")}</label>
+      <label class="check"><input type="checkbox" id="fConsent" ${f.consent ? "checked" : ""}> Согласен на обработку персональных данных</label>
+      <div class="err-text" id="formErr" role="alert"></div>
+    </form>`;
+  const bind = (id, key, prop = "value") => { const el = $(id); el.addEventListener(prop === "value" ? "input" : "change", () => { f[key] = el[prop]; save(); }); };
+  bind("fName", "name"); bind("fPhone", "phone"); bind("fComment", "comment");
+  bind("fAge", "age", "checked"); bind("fConsent", "consent", "checked");
+  $("fSeat").onchange = e => { f.seat = e.target.checked; save(); renderBook(v); };
+  v.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { f.delivery = b.dataset.del; save(); renderBook(v); });
+  $("tgPhone").onclick = () => { f.phone = "+7 928 000-00-00"; save(); $("fPhone").value = f.phone; toast("Демо: Telegram передал номер"); };
+  $("bookForm").onsubmit = e => { e.preventDefault(); submitBooking(); };
+  mainButton(`Отправить заявку · ${rub(q.total)}`, submitBooking);
+}
+function submitBooking() {
+  const f = state.form, err = $("formErr");
+  const digits = f.phone.replace(/\D/g, "");
+  const problem = !f.name.trim() ? "Укажите имя." : digits.length < 10 ? "Укажите телефон, чтобы менеджер мог перезвонить." :
+    !f.age ? "Подтвердите возраст и стаж: без этого машину не выдадут." : !f.consent ? "Нужно согласие на обработку персональных данных." : "";
+  if (problem) { err.textContent = problem; return; }
+  const m = modelById(state.modelId), r = state.range;
+  const recheck = rangeError(m.id, r.start, r.end);
+  if (recheck) { err.textContent = recheck; return; }
+  const q = quote();
+  const bk = { id: state.nextId++, unit: null, model: m.id, start: r.start, end: r.end, status: "new", client: f.name.trim(), phone: f.phone.trim(),
+    delivery: f.delivery, seat: f.seat, comment: f.comment.trim(), total: q.total, mine: true, demo: false, created: Date.now() };
+  state.bookings.unshift(bk);
+  state.lastCreated = bk.id;
+  state.botQueue.unshift(bk.id);
+  state.form = { ...f, comment: "" };
+  go("done");
+}
+function renderDone(v) {
+  const bk = state.bookings.find(b => b.id === state.lastCreated);
+  const m = modelById(bk.model);
+  v.innerHTML = `
+    <div class="success"><div class="mark">✓</div><h2>Заявка №${bk.id} отправлена</h2>
+      <p>${esc(m.name)}, ${fmtRange(bk.start, bk.end)}. Менеджер подтвердит бронь в этом чате. В рабочее время (${COMPANY.hours}) ответ обычно приходит за 15 минут.</p></div>
+    <div class="sum"><div class="row"><span>Срок</span><span>${sutki(diffDays(bk.start, bk.end))}</span></div>
+      <div class="row total"><span>Итого</span><span>${rub(bk.total)}</span></div></div>
+    <p class="hint">Переключитесь в режим «Менеджер», чтобы увидеть, как заявка приходит сотруднику.</p>`;
+  mainButton("Мои брони", () => go("mine"));
+}
+function renderMine(v) {
+  const mine = state.bookings.filter(b => b.mine);
+  v.innerHTML = `<h2>Мои брони</h2><div class="list">${mine.length ? mine.map(b => {
+    const m = modelById(b.model);
+    const canCancel = b.status === "new" || b.status === "confirmed";
+    return `<div class="bk" data-s="${b.status}"><div class="bk-top"><div class="bk-title">${esc(m.name)}</div><span class="pill ${b.status}">${STATUS[b.status]}</span></div>
+      <div class="bk-meta"><span>№${b.id} · ${fmtRange(b.start, b.end)} · ${sutki(diffDays(b.start, b.end))}</span><span>${rub(b.total || 0)}</span></div>
+      ${canCancel ? `<div class="actions"><button class="btn danger" type="button" data-cancel="${b.id}">Отменить бронь</button></div>` : ""}</div>`;
+  }).join("") : `<div class="empty">Броней пока нет. Выберите машину в каталоге.</div>`}</div>`;
+  v.querySelectorAll("[data-cancel]").forEach(btn => btn.onclick = () => {
+    const b = state.bookings.find(x => x.id === +btn.dataset.cancel);
+    if (btn.dataset.armed) { b.status = "cancelled"; save(); toast("Бронь №" + b.id + " отменена"); renderMine(v); return; }
+    btn.dataset.armed = "1"; btn.textContent = "Точно отменить?";
+  });
+  mainButton("В каталог", () => go("catalog"));
+}
+
+// ----- менеджер -----
+function renderManager(v) {
+  const tabs = [["requests", "Заявки"], ["board", "Шахматка"], ["fleet", "Автопарк"]];
+  const active = state.bookings.filter(b => b.status === "issued").length;
+  const freeToday = state.units.filter(u => unitFree(u, TODAY, addDays(TODAY, 1))).length;
+  v.innerHTML = `
+    <div class="stats"><div class="stat"><b>${newCount()}</b><span>новых заявок</span></div>
+      <div class="stat"><b>${active}</b><span>машин в аренде</span></div>
+      <div class="stat"><b>${freeToday}/${state.units.length}</b><span>свободно сегодня</span></div></div>
+    <div class="tabs" role="group" aria-label="Разделы" style="margin-top:12px">${tabs.map(([id, n]) => `<button type="button" data-t="${id}" aria-pressed="${state.mgrTab === id}">${n}${id === "requests" && newCount() ? `<span class="count">${newCount()}</span>` : ""}</button>`).join("")}</div>
+    <div id="mgrBody"></div>`;
+  v.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { state.mgrTab = b.dataset.t; save(); renderManager(v); });
+  const body = $("mgrBody");
+  ({ requests: renderRequests, board: renderBoard, fleet: renderFleet }[state.mgrTab])(body, v);
+  mainButton("");
+}
+function renderRequests(body, v) {
+  const order = { new: 0, confirmed: 1, issued: 2, returned: 3, declined: 4, cancelled: 5 };
+  const list = [...state.bookings].sort((a, b) => order[a.status] - order[b.status] || a.start.localeCompare(b.start));
+  const botIds = state.botQueue.filter(id => state.bookings.find(b => b.id === id && b.status === "new"));
+  const bot = botIds.length ? botIds.map(id => {
+    const b = state.bookings.find(x => x.id === id), m = modelById(b.model), del = DELIVERY.find(d => d.id === b.delivery);
+    return `<div class="botmsg"><div class="botmsg-head"><i></i>Бот Dadaev Car · сообщение менеджеру</div>
+      <pre>🆕 Заявка №${b.id}
+${m.name}
+${fmtRange(b.start, b.end)} (${sutki(diffDays(b.start, b.end))})
+Получение: ${del.name.toLowerCase()}${b.seat ? ", нужно детское кресло" : ""}
+${b.client}, ${b.phone}${b.comment ? "\n«" + b.comment + "»" : ""}
+Итого: ${rub(b.total || 0)}</pre>
+      <div class="actions"><button class="btn primary" type="button" data-act="confirm" data-id="${b.id}">Подтвердить</button><button class="btn danger" type="button" data-act="decline" data-id="${b.id}">Отклонить</button></div></div>`;
+  }).join("") : "";
+  body.innerHTML = `${bot ? `<h3>Уведомления в Telegram</h3><div class="list">${bot}</div><h3>Все заявки</h3>` : ""}
+    <div class="list">${list.map(b => {
+      const m = modelById(b.model), u = b.unit ? unitById(b.unit) : null, del = DELIVERY.find(d => d.id === b.delivery);
+      const acts = { new: [["confirm", "Подтвердить", "primary"], ["decline", "Отклонить", "danger"]], confirmed: [["issue", "Выдал машину", "primary"], ["cancel", "Отменить", "danger"]], issued: [["return", "Принял возврат", "primary"]] }[b.status] || [];
+      return `<div class="bk" data-s="${b.status}"><div class="bk-top"><div class="bk-title">№${b.id} · ${esc(m.name)}</div><span class="pill ${b.status}">${STATUS[b.status]}</span></div>
+        <div class="bk-meta"><span>${fmtRange(b.start, b.end)} · ${sutki(diffDays(b.start, b.end))} · ${del.name.toLowerCase()}</span>
+          <span>${esc(b.client)}${b.demo ? " (демо)" : ""} · ${esc(b.phone)}</span>
+          <span>${u ? "Машина: " + esc(u.label) : "Машина будет назначена при подтверждении"}</span></div>
+        ${acts.length ? `<div class="actions">${acts.map(([a, t, c]) => `<button class="btn ${c}" type="button" data-act="${a}" data-id="${b.id}">${t}</button>`).join("")}</div>` : ""}</div>`;
+    }).join("")}</div>`;
+  body.querySelectorAll("[data-act]").forEach(btn => btn.onclick = () => act(btn.dataset.act, +btn.dataset.id, v));
+}
+function act(action, id, v) {
+  const b = state.bookings.find(x => x.id === id);
+  if (action === "confirm") {
+    const free = freeUnits(b.model, b.start, b.end, b.id);
+    if (!free.length) { toast("Нет свободной машины на эти даты. Отклоните заявку или освободите машину."); return; }
+    b.unit = b.unit && free.some(u => u.id === b.unit) ? b.unit : free[0].id;
+    b.status = "confirmed"; toast(`№${id} подтверждена · ${unitById(b.unit).label}. Клиенту ушло уведомление.`);
+  } else if (action === "decline") { b.status = "declined"; toast(`№${id} отклонена. Клиенту ушло уведомление.`); }
+  else if (action === "issue") { b.status = "issued"; toast(`№${id}: машина выдана`); }
+  else if (action === "return") { b.status = "returned"; toast(`№${id}: машина возвращена`); }
+  else if (action === "cancel") { b.status = "cancelled"; toast(`№${id} отменена`); }
+  state.botQueue = state.botQueue.filter(x => x !== id || b.status === "new");
+  save(); renderTop(); renderManager(v);
+}
+function renderBoard(body) {
+  const DAYS = 14, days = Array.from({ length: DAYS }, (_, i) => addDays(TODAY, i));
+  const head = days.map(d => { const dt = parse(d), we = dt.getDay() === 0 || dt.getDay() === 6;
+    return `<th class="${we ? "we" : ""} ${d === TODAY ? "today" : ""}">${DOW[dt.getDay()]}<br>${dt.getDate()}</th>`; }).join("");
+  const rows = state.units.map(u => {
+    const m = modelById(u.model);
+    const bks = state.bookings.filter(b => b.unit === u.id && ["confirmed", "issued"].includes(b.status));
+    const pending = state.bookings.filter(b => !b.unit && b.status === "new" && b.model === u.model && freeUnits(u.model, b.start, b.end)[0]?.id === u.id);
+    const cells = days.map(d => {
+      if (u.repair) return `<td><div class="cell repair ${d === days[0] ? "s" : ""} ${d === days[DAYS - 1] ? "e" : ""}"></div></td>`;
+      const b = bks.find(x => x.start <= d && d < x.end) || pending.find(x => x.start <= d && d < x.end);
+      if (!b) return "<td></td>";
+      const s = d === b.start ? "s" : "", e = addDays(d, 1) === b.end ? "e" : "";
+      return `<td title="№${b.id} · ${esc(b.client)}"><div class="cell ${b.status} ${s} ${e}"></div></td>`;
+    }).join("");
+    return `<tr><th class="unit">${esc(u.label)}<small>${rub(u.price)}${u.repair ? " · ремонт" : ""}</small></th>${cells}</tr>`;
+  }).join("");
+  body.innerHTML = `<div class="board-wrap"><table class="board"><thead><tr><th class="unit">Машина</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="legend"><span><i style="background:var(--ok)"></i>Подтверждена</span><span><i style="background:var(--warn)"></i>Выдана</span>
+      <span><i style="background:repeating-linear-gradient(45deg,var(--info) 0 3px,transparent 3px 6px)"></i>Новая заявка</span>
+      <span><i style="background:repeating-linear-gradient(45deg,var(--muted) 0 3px,transparent 3px 6px)"></i>Ремонт</span></div>`;
+}
+function renderFleet(body, v) {
+  body.innerHTML = `<div class="list">${state.units.map(u => {
+    const m = modelById(u.model);
+    const now = state.bookings.find(b => b.unit === u.id && b.status === "issued");
+    return `<div class="fleet-item"><div class="ph">${m.photos[0] ? `<img src="img/${m.photos[0]}.jpg" alt="" loading="lazy">` : ""}</div>
+      <div class="info"><b>${esc(m.name)}</b><span>${esc(u.label)} · ${u.repair ? "в ремонте" : now ? "в аренде до " + fmtDate(now.end) : "в парке"}</span>
+        <label class="switch"><input type="checkbox" data-repair="${u.id}" ${u.repair ? "checked" : ""}> Ремонт</label></div>
+      <label class="sr" style="display:grid;gap:2px;font-size:11px;color:var(--muted);text-align:right">₽/сутки<input class="price-input" id="price-${u.id}" inputmode="numeric" value="${u.price}" data-price="${u.id}"></label></div>`;
+  }).join("")}</div>
+  <p class="hint">Цены и статусы меняются сразу и видны клиентам в каталоге.</p>
+  <button class="btn" type="button" id="resetDemo" style="margin-top:12px">Сбросить демо-данные</button>`;
+  body.querySelectorAll("[data-repair]").forEach(c => c.onchange = () => { unitById(c.dataset.repair).repair = c.checked; save(); toast(c.checked ? "Машина снята с аренды" : "Машина снова доступна"); renderManager(v); });
+  body.querySelectorAll("[data-price]").forEach(i => i.onchange = () => {
+    const n = parseInt(i.value.replace(/\D/g, ""), 10);
+    if (!n) { i.value = unitById(i.dataset.price).price; toast("Введите цену числом"); return; }
+    unitById(i.dataset.price).price = n; save(); toast("Цена сохранена: " + rub(n));
+  });
+  $("resetDemo").onclick = e => {
+    if (!e.target.dataset.armed) { e.target.dataset.armed = "1"; e.target.textContent = "Нажмите ещё раз, чтобы сбросить"; return; }
+    state = freshState(); state.role = "manager"; state.screen = "mgr"; save(); render(); toast("Демо-данные восстановлены");
+  };
+}
+
+render();
+</script>
+
+</body>
+</html>
